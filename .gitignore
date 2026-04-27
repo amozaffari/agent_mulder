@@ -1,0 +1,10 @@
+# Personal data — machine-specific, not for version control
+registry.json
+
+# Local notes or scratch files
+local/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
