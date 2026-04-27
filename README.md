@@ -51,8 +51,12 @@ your-project/           ← run `claude` here → this is a project agent
 ```bash
 git clone <this repo>
 cd agent_mulder
-pip install -r requirements.txt
+uv venv && uv pip install -r requirements.txt
 ```
+
+> Requires [uv](https://github.com/astral-sh/uv). Install it with `curl -LsSf https://astral.sh/uv/install.sh | sh`.
+
+All commands are run with `uv run python mulder.py <command>`.
 
 ---
 
@@ -61,23 +65,23 @@ pip install -r requirements.txt
 ### Register a project
 
 ```bash
-python mulder.py add /path/to/project myproject --goal "What this project is trying to achieve"
+uv run python mulder.py add /path/to/project myproject --goal "What this project is trying to achieve"
 ```
 
 ### Introduce Mulder to a project
 
-Creates the `.mulder/` structure and prints a snippet to paste into the project's `CLAUDE.md`:
+Creates the `.mulder/` structure, adds `.mulder/` to the project's `.gitignore`, and writes the Mulder snippet into the project's `CLAUDE.md` (creating it if it doesn't exist):
 
 ```bash
-python mulder.py introduce myproject
+uv run python mulder.py introduce myproject
 ```
 
-Add the printed snippet to the project's `CLAUDE.md`. From that point on, any Claude Code session inside that project will know to read tasks from Mulder and write status back.
+From that point on, any Claude Code session inside that project will know to read tasks from Mulder and write status back.
 
 ### Scan all projects
 
 ```bash
-python mulder.py scan
+uv run python mulder.py scan
 ```
 
 Reads and displays the current status and open tasks for every registered project.
@@ -85,34 +89,47 @@ Reads and displays the current status and open tasks for every registered projec
 ### Check a single project
 
 ```bash
-python mulder.py status myproject
+uv run python mulder.py status myproject
 ```
 
 ### Leave a task for a project agent
 
 ```bash
-python mulder.py task myproject "Refactor the auth module to use the new JWT library — see issue #42"
+uv run python mulder.py task myproject "Refactor the auth module to use the new JWT library — see issue #42"
 ```
 
 The task is written to `.mulder/tasks.md`. The project agent picks it up at the start of its next session.
 
+### Update the Mulder snippet in a project
+
+When the Mulder protocol changes (new shorthands, updated instructions), push the latest snippet to one or all projects:
+
+```bash
+uv run python mulder.py update myproject   # single project
+uv run python mulder.py update --all       # all registered projects
+```
+
 ### View activity log
 
 ```bash
-python mulder.py log myproject
+uv run python mulder.py log myproject
 ```
 
 ### List all registered projects
 
 ```bash
-python mulder.py list
+uv run python mulder.py list
 ```
 
 ### Remove a project
 
+Reverses `introduce` — deletes `.mulder/`, cleans `.gitignore`, removes the Mulder snippet from `CLAUDE.md`, and unregisters the project:
+
 ```bash
-python mulder.py remove myproject
+uv run python mulder.py remove myproject
 ```
+
+Use `-y` to skip the confirmation prompt.
 
 ---
 
@@ -130,17 +147,24 @@ Project ←  .mulder/tasks.md            (queued work)
 
 Every `status.md` has a `last_updated:` timestamp. If a project hasn't updated in more than 24 hours during active development, Mulder flags it as potentially blocked or abandoned.
 
+### Shorthand command
+
+Inside any project session, say **mulder-sync** to trigger a full sync:
+1. Read `.mulder/tasks.md` for pending tasks
+2. Update `.mulder/status.md` with current work, completions, and blockers
+3. Update the `last_updated:` timestamp
+
 ---
 
 ## What Gets Committed
 
-```
-.gitignore       ← keeps personal data out of git
-CLAUDE.md        ← Mulder's instructions
-mulder.py        ← the CLI
-requirements.txt ← dependencies
-README.md        ← this file
-```
+- `.gitignore` — keeps personal data out of git
+- `CLAUDE.md` — Mulder's instructions
+- `mulder.py` — the CLI
+- `requirements.txt` — dependencies
+- `pyproject.toml` — uv project config
+- `uv.lock` — locked dependencies
+- `README.md` — this file
 
 `registry.json` is gitignored — it contains your local paths and project goals and stays on your machine.
 

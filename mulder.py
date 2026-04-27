@@ -419,6 +419,68 @@ def introduce(name):
 
 
 @cli.command()
+@click.argument("name", required=False)
+@click.option("--all", "all_projects", is_flag=True, help="Update all registered projects")
+def update(name, all_projects):
+    """Update the Mulder snippet in a project's CLAUDE.md to the latest version."""
+    reg = load_registry()
+    projects = reg["projects"]
+
+    if not name and not all_projects:
+        console.print("[red]Specify a project name or use --all.[/red]")
+        sys.exit(1)
+
+    targets = list(projects.values()) if all_projects else [projects.get(name)]
+
+    if not all_projects and not targets[0]:
+        console.print(f"[red]Project '{name}' not found.[/red]")
+        sys.exit(1)
+
+    for p in targets:
+        pname = p["name"]
+        path = Path(p["path"])
+        claude_md_path = path / "CLAUDE.md"
+        snippet = _claude_md_snippet(pname)
+
+        if not claude_md_path.exists():
+            claude_md_path.write_text(snippet)
+            console.print(f"  [green]Created[/green] {claude_md_path}")
+            continue
+
+        content = claude_md_path.read_text()
+
+        if "## Mulder Integration" not in content:
+            with open(claude_md_path, "a") as f:
+                f.write(f"\n{snippet}")
+            console.print(f"  [green]Appended[/green] snippet to {claude_md_path}")
+            continue
+
+        # Replace everything from ## Mulder Integration to end of that section
+        lines = content.splitlines()
+        before = []
+        inside = False
+        for line in lines:
+            if line.strip() == "## Mulder Integration":
+                inside = True
+                continue
+            if inside and line.startswith("## ") and line.strip() != "## Mulder Integration":
+                inside = False
+            if not inside:
+                before.append(line)
+
+        # Strip trailing blank lines before re-appending
+        while before and not before[-1].strip():
+            before.pop()
+
+        new_content = "\n".join(before) + f"\n\n{snippet}"
+        claude_md_path.write_text(new_content)
+        console.print(f"  [green]Updated[/green] Mulder snippet in {claude_md_path}")
+        append_log(p, "Mulder", "Updated Mulder snippet in CLAUDE.md.")
+
+    console.print("[bold green]✓ Done[/bold green]")
+
+
+@cli.command()
 @click.argument("name")
 def log(name):
     """Show the activity log for a project."""
@@ -534,6 +596,16 @@ Update the `last_updated:` timestamp whenever you write to `status.md`.
 **Completing tasks:** When you finish a task from `.mulder/tasks.md`, mark it `- [x]` and move it to the Completed section.
 
 The `.mulder/` directory is the communication channel between this agent and Mulder.
+
+### Trigger phrase: mulder-sync
+
+If the user sends a message that is exactly or contains **mulder-sync**, treat it as the following instruction (do not look it up as a command or skill — just execute these steps directly):
+
+1. Read `.mulder/tasks.md` — note any pending tasks
+2. Read `.mulder/status.md` — understand current state
+3. Rewrite `.mulder/status.md` to reflect the actual current state of the project: what is being worked on, what was recently completed, any blockers
+4. Update the `last_updated:` line to the current timestamp
+5. Reply with a brief summary of what you wrote
 """
 
 

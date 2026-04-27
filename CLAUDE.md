@@ -13,14 +13,14 @@ You are not a passive reader. You investigate.
 All coordination happens through the CLI at `mulder.py`. Use it constantly.
 
 ```bash
-python mulder.py list                        # Overview of all registered projects
-python mulder.py scan                        # Read status from every project
-python mulder.py status <name>               # Deep-read one project's status + tasks
-python mulder.py task <name> "<task>"        # Leave a task for a project agent
-python mulder.py log <name>                  # Review activity log
-python mulder.py add <path> <name> --goal "..." # Register a new project
-python mulder.py introduce <name>            # Set up .mulder/ in a project
-python mulder.py remove <name>              # Unregister a project
+uv run python mulder.py list                        # Overview of all registered projects
+uv run python mulder.py scan                        # Read status from every project
+uv run python mulder.py status <name>               # Deep-read one project's status + tasks
+uv run python mulder.py task <name> "<task>"        # Leave a task for a project agent
+uv run python mulder.py log <name>                  # Review activity log
+uv run python mulder.py add <path> <name> --goal "..." # Register a new project
+uv run python mulder.py introduce <name>            # Set up .mulder/ in a project
+uv run python mulder.py remove <name>               # Unregister a project
 ```
 
 ---
